@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#667eea" />
+    <meta
+      name="description"
+      content="AI-based Mental Health Monitoring and Support System"
+    />
+    <title>Mental Health Support System</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="http://localhost:5000" crossorigin />
+    
+    <script>
+      // Global error handler
+      window.addEventListener('error', function(event) {
+        console.error('Global error:', event.error);
+        // You can send error reports to your logging service here
+        if (window.errorReporting) {
+          window.errorReporting.logError(event.error);
+        }
+      });
+
+      // Unhandled promise rejection handler
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection:', event.reason);
+        if (window.errorReporting) {
+          window.errorReporting.logError(event.reason);
+        }
+      });
+
+      // Performance monitoring
+      window.addEventListener('load', function() {
+        if ('performance' in window) {
+          const perfData = window.performance.timing;
+          const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
+          console.log('Page load time:', pageLoadTime + 'ms');
+          
+          // Log performance metrics
+          if (window.performanceObserver) {
+            window.performanceObserver.logMetrics({
+              loadTime: pageLoadTime,
+              domContentLoaded: perfData.domContentLoadedEventEnd - perfData.navigationStart,
+              firstPaint: perfData.responseEnd - perfData.requestStart
+            });
+          }
+        }
+      });
+
+      // Utility functions available globally
+      window.appUtils = {
+        // Format timestamp
+        formatTime: function(timestamp) {
+          const date = new Date(timestamp);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        },
+        
+        // Format date
+        formatDate: function(timestamp) {
+          const date = new Date(timestamp);
+          return date.toLocaleDateString();
+        },
+        
+        // Debounce function
+        debounce: function(func, wait) {
+          let timeout;
+          return function executedFunction(...args) {
+            const later = () => {
+              clearTimeout(timeout);
+              func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+          };
+        },
+        
+        // Throttle function
+        throttle: function(func, limit) {
+          let inThrottle;
+          return function(...args) {
+            if (!inThrottle) {
+              func.apply(this, args);
+              inThrottle = true;
+              setTimeout(() => inThrottle = false, limit);
+            }
+          };
+        },
+        
+        // Check if user is online
+        isOnline: function() {
+          return navigator.onLine;
+        },
+        
+        // Copy to clipboard
+        copyToClipboard: async function(text) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            console.error('Failed to copy:', err);
+            return false;
+          }
+        },
+        
+        // Local storage helpers
+        storage: {
+          set: function(key, value) {
+            try {
+              localStorage.setItem(key, JSON.stringify(value));
+              return true;
+            } catch (e) {
+              console.error('Storage set error:', e);
+              return false;
+            }
+          },
+          get: function(key) {
+            try {
+              const item = localStorage.getItem(key);
+              return item ? JSON.parse(item) : null;
+            } catch (e) {
+              console.error('Storage get error:', e);
+              return null;
+            }
+          },
+          remove: function(key) {
+            try {
+              localStorage.removeItem(key);
+              return true;
+            } catch (e) {
+              console.error('Storage remove error:', e);
+              return false;
+            }
+          }
+        },
+        
+        // Session storage helpers
+        session: {
+          set: function(key, value) {
+            try {
+              sessionStorage.setItem(key, JSON.stringify(value));
+              return true;
+            } catch (e) {
+              console.error('Session storage set error:', e);
+              return false;
+            }
+          },
+          get: function(key) {
+            try {
+              const item = sessionStorage.getItem(key);
+              return item ? JSON.parse(item) : null;
+            } catch (e) {
+              console.error('Session storage get error:', e);
+              return null;
+            }
+          },
+          remove: function(key) {
+            try {
+              sessionStorage.removeItem(key);
+              return true;
+            } catch (e) {
+              console.error('Session storage remove error:', e);
+              return false;
+            }
+          }
+        }
+      };
+
+      // Online/Offline event handlers
+      window.addEventListener('online', function() {
+        console.log('Connection restored');
+        // You can dispatch a custom event or update UI
+        window.dispatchEvent(new CustomEvent('connectionRestored'));
+      });
+
+      window.addEventListener('offline', function() {
+        console.log('Connection lost');
+        // You can dispatch a custom event or update UI
+        window.dispatchEvent(new CustomEvent('connectionLost'));
+      });
+
+      // Prevent right-click context menu (optional - for privacy)
+      // Uncomment if needed
+      // document.addEventListener('contextmenu', function(e) {
+      //   e.preventDefault();
+      // });
+
+      // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (optional - for privacy)
+      // Uncomment if needed
+      // document.addEventListener('keydown', function(e) {
+      //   if (e.key === 'F12' || 
+      //       (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+      //       (e.ctrlKey && e.key === 'U')) {
+      //     e.preventDefault();
+      //   }
+      // });
+
+      // Initialize app state
+      window.appState = {
+        initialized: false,
+        sessionId: null,
+        userId: null,
+        startTime: Date.now()
+      };
+
+      // Log app initialization
+      console.log('%cMental Health Support System', 'color: #667eea; font-size: 20px; font-weight: bold;');
+      console.log('%cInitialized successfully', 'color: #4CAF50; font-size: 12px;');
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        text-align: center;
+        padding: 2rem;
+      ">
+        <div>
+          <h1 style="color: #667eea; margin-bottom: 1rem;">JavaScript Required</h1>
+          <p style="color: #4a5568; font-size: 1.1rem;">
+            This application requires JavaScript to function properly.<br />
+            Please enable JavaScript in your browser settings and refresh the page.
+          </p>
+        </div>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    
+    <script>
+      // Initialize React app state after DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        window.appState.initialized = true;
+        console.log('DOM loaded, React app can initialize');
+      });
+
+      // Service Worker registration (for PWA support - optional)
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          // Uncomment to enable service worker
+          // navigator.serviceWorker.register('/service-worker.js')
+          //   .then(function(registration) {
+          //     console.log('ServiceWorker registration successful');
+          //   })
+          //   .catch(function(err) {
+          //     console.log('ServiceWorker registration failed');
+          //   });
+        });
+      }
+    </script>
+  </body>
+</html>
+
